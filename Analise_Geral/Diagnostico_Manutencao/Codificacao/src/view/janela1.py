@@ -82,13 +82,22 @@ class Janela1:
                     print('Valor incorreto, recomeçando')
                     break
                 endereco = str(input('Endereco:'))
-                status_aux = int(input('status: 1-preparo, 2-pronto, 3-entregue: '))
-                if status_aux == 1:
-                    status = 'preparo'
-                if status_aux == 2:
-                    status = 'pronto'
-                else:
-                    status = 'entregue'
+                while True:
+                    try:
+                        status_aux = int(input('status: 1-preparo, 2-pronto, 3-entregue: '))
+                        if status_aux == 1:
+                            status = 'preparo'
+                            break
+                        elif status_aux == 2:
+                            status = 'pronto'
+                            break
+                        elif status_aux == 3:
+                            status = 'entregue'
+                            break
+                        else:
+                            print('Opção inválida! Digite apenas 1, 2 ou 3.')
+                    except ValueError:
+                        print('Entrada inválida! Digite apenas números (1, 2 ou 3).')
  
                 print(f'Valor Final: R${valor_total}')
                 data_hoje = date.today()
