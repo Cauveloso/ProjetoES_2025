@@ -111,6 +111,30 @@ class DatabaseControler:
             print(f"Erro ao criar tabela 'itens_pedidos': {e}")
             raise
 
+    @staticmethod
+    def create_table_pedidos(conn: sqlite3.Connection) -> None:
+        """Cria tabela de pedidos com status atualizados"""
+        sql = """
+        CREATE TABLE IF NOT EXISTS pedidos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente TEXT NOT NULL,
+            telefone TEXT NOT NULL DEFAULT '',
+            data TEXT NOT NULL,
+            valor_total REAL NOT NULL DEFAULT 0,
+            status TEXT DEFAULT 'pendente' CHECK(status IN ('pendente', 'preparando', 'pronto', 'entregue', 'cancelado')),
+            delivery BOOLEAN NOT NULL DEFAULT 0,
+            endereco TEXT DEFAULT 'Retirada no local',
+            observacoes TEXT,
+            data_criacao TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+        try:
+            conn.execute(sql)
+            conn.commit()
+        except Error as e:
+            print(f"Erro ao criar tabela 'pedidos': {e}")
+            raise
+
     # ==================== MIGRAÇÕES DE DADOS ====================
     
     @staticmethod
@@ -187,7 +211,7 @@ class DatabaseControler:
                 cursor.execute("ALTER TABLE pedidos ADD COLUMN total REAL NOT NULL DEFAULT 0")
             
             # Adiciona outras colunas que podem estar faltando
-            for coluna in ['delivery', 'endereco_entrega', 'observacoes', 'data_criacao']:
+            for coluna in ['delivery', 'endereco', 'observacoes', 'data_criacao']:  # Corrigido 'endereco_entrega' para 'endereco'
                 if coluna not in colunas_pedidos:
                     if coluna == 'delivery':
                         cursor.execute(f"ALTER TABLE pedidos ADD COLUMN {coluna} BOOLEAN NOT NULL DEFAULT 0")
@@ -195,6 +219,53 @@ class DatabaseControler:
                         cursor.execute(f"ALTER TABLE pedidos ADD COLUMN {coluna} TEXT DEFAULT CURRENT_TIMESTAMP")
                     else:
                         cursor.execute(f"ALTER TABLE pedidos ADD COLUMN {coluna} TEXT")
+            
+            # Verifica e atualiza os status permitidos se necessário
+            cursor.execute("""
+            SELECT sql FROM sqlite_master 
+            WHERE type = 'table' AND name = 'pedidos'
+            """)
+            table_sql = cursor.fetchone()[0]
+            
+            status_necessarios = {'pendente', 'preparando', 'pronto', 'entregue', 'cancelado'}
+            if not all(status in table_sql for status in status_necessarios):
+                # Cria tabela temporária com os status atualizados
+                cursor.execute("""
+                CREATE TABLE pedidos_temp (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cliente TEXT NOT NULL,
+                    telefone TEXT NOT NULL DEFAULT '',
+                    data TEXT NOT NULL,
+                    valor_total REAL NOT NULL DEFAULT 0,
+                    status TEXT DEFAULT 'pendente' CHECK(status IN ('pendente', 'preparando', 'pronto', 'entregue', 'cancelado')),
+                    delivery BOOLEAN NOT NULL DEFAULT 0,
+                    endereco TEXT DEFAULT 'Retirada no local',
+                    observacoes TEXT,
+                    data_criacao TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+                """)
+                
+                # Migra os dados convertendo status se necessário
+                cursor.execute("""
+                INSERT INTO pedidos_temp
+                SELECT 
+                    id, cliente, telefone, data, valor_total,
+                    CASE
+                        WHEN status IN ('pendente', 'preparando', 'pronto', 'entregue', 'cancelado') THEN status
+                        ELSE 'pendente'
+                    END,
+                    delivery, endereco, observacoes, data_criacao
+                FROM pedidos
+                """)
+                
+                # Substitui a tabela antiga
+                cursor.execute("DROP TABLE pedidos")
+                cursor.execute("ALTER TABLE pedidos_temp RENAME TO pedidos")
+                
+                # Recria índices
+                cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_pedidos_status ON pedidos(status)
+                """)
             
             # Migrações para tabela itens_pedidos
             cursor.execute("PRAGMA table_info(itens_pedidos)")
@@ -421,47 +492,76 @@ class DatabaseControler:
     
     @staticmethod
     def atualizar_estrutura_banco(database_name: str):
-        """Atualiza estrutura do banco para novos valores de status"""
+        """Atualiza estrutura do banco para incluir todos os status necessários"""
         try:
             conn = sqlite3.connect(database_name)
             cursor = conn.cursor()
             
-            # Verifica se atualização é necessária
-            cursor.execute("PRAGMA table_info(pedidos)")
-            colunas = [column[1] for column in cursor.fetchall()]
-            if 'status' not in colunas:
-                return  # Já atualizado
+            # Verifica se a tabela já está com os status atualizados
+            cursor.execute("""
+            SELECT sql FROM sqlite_master 
+            WHERE type = 'table' AND name = 'pedidos'
+            """)
+            table_sql = cursor.fetchone()[0]
+            
+            # Lista completa de status que queremos permitir
+            status_permitidos = {'pendente', 'preparando', 'pronto', 'entregue', 'cancelado'}
+            
+            # Verifica se já contém todos os status necessários
+            if all(status in table_sql for status in status_permitidos):
+                return  # Já está atualizado
 
-            # Cria nova tabela com constraints adequadas
+            # Cria nova tabela com constraints completas
             cursor.execute("""
             CREATE TABLE pedidos_nova (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 cliente TEXT NOT NULL,
+                telefone TEXT NOT NULL DEFAULT '',
                 data TEXT NOT NULL,
-                status TEXT NOT NULL CHECK(status IN ('preparando', 'pronto', 'entregue')),
+                valor_total REAL NOT NULL DEFAULT 0,
+                status TEXT DEFAULT 'pendente' CHECK(status IN ('pendente', 'preparando', 'pronto', 'entregue', 'cancelado')),
                 delivery BOOLEAN NOT NULL DEFAULT 0,
-                endereco TEXT,
-                valor_total REAL NOT NULL DEFAULT 0
+                endereco TEXT DEFAULT 'Retirada no local',
+                observacoes TEXT,
+                data_criacao TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """)
 
-            # Migra dados com conversão de status
+            # Migra os dados convertendo status se necessário
             cursor.execute("""
             INSERT INTO pedidos_nova 
-            SELECT id, cliente, data, 
-                CASE 
-                    WHEN status = 'pendente' THEN 'preparando'
-                    ELSE status
+            SELECT 
+                id, 
+                cliente, 
+                telefone, 
+                data, 
+                valor_total,
+                CASE
+                    WHEN status = 'pronto' THEN 'pronto'  # Mantém se já existir
+                    WHEN status = 'pendente' THEN 'pendente'
+                    WHEN status = 'preparando' THEN 'preparando'
+                    WHEN status = 'entregue' THEN 'entregue'
+                    WHEN status = 'cancelado' THEN 'cancelado'
+                    ELSE 'pendente'  # Converte status desconhecidos para pendente
                 END,
-                delivery, endereco, valor_total
+                delivery,
+                endereco,
+                observacoes,
+                data_criacao
             FROM pedidos
             """)
 
             # Substitui tabela antiga
             cursor.execute("DROP TABLE pedidos")
             cursor.execute("ALTER TABLE pedidos_nova RENAME TO pedidos")
+            
+            # Recria índices e relações
+            cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_pedidos_status ON pedidos(status)
+            """)
+            
             conn.commit()
-            print("✅ Estrutura da tabela de pedidos atualizada com sucesso!")
+            print("✅ Estrutura da tabela de pedidos atualizada com todos os status necessários!")
         except Exception as e:
             print(f"❌ Erro na atualização da estrutura: {e}")
             conn.rollback()
