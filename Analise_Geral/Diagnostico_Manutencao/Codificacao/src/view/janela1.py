@@ -42,10 +42,16 @@ class Janela1:
             lista_itens = []
             valor_total=0
             
-            # SOLUÇÃO Nº 2 (Corretiva): Validação de entrada robusta
-            a = str(input('Deseja cadastrar um novo pedido? (s/n): ')).lower().strip()
+            # SOLUÇÃO Nº 2 (Corretiva): Validação de entrada robusta para 'sim'/'não'
+            # Lista de possíveis respostas afirmativas
+            respostas_positivas = ['s', 'sim']
+            # Lista de possíveis respostas negativas (agora incluindo a versão com acento)
+            respostas_negativas = ['n', 'nao', 'não']
+            # Trata a entrada do usuário: remove espaços, converte para minúsculas e normaliza (remove acentos)
+            # A normalização não é nativa, mas a lógica de verificação cobre isso
+            entrada_usuario = str(input('Deseja cadastrar um novo pedido? (s-Sim / n-Não): ')).lower().strip()
             
-            if a=='s': # A verificação agora é com 's'
+            if entrada_usuario in respostas_positivas: # A verificação agora é com as respostas positivas
                 print('----------Cadastrar pedido----------\n')
                 adicionar = 'y'
                 pedidos = PedidoControler.search_in_pedidos_all(database_name)
@@ -94,7 +100,7 @@ class Janela1:
                 for elem in lista_itens:
                     ItemControler.insert_into_itens_pedidos(database_name,elem)
                 
-            elif a=='n':
+            elif entrada_usuario in respostas_negativas :
                 print('Voltando ao Menu inicial')
-                time.sleep(2)
+                time.sleep(1)
                 break
