@@ -29,6 +29,7 @@ class Janela1:
         
         a = 'y'
         
+        # SOLUÇÃO Nº 1 (Perfectiva): Melhorando a exibição do menu.
         menu_itens = ItemControler.mostrar_itens_menu(database_name)
         print('\n-------------------- Menu --------------------')
         print(f'{"ID":<5}| {"Nome":<20}| {"Preço":<10}| {"Tipo":<15}')
@@ -41,9 +42,10 @@ class Janela1:
             lista_itens = []
             valor_total=0
             
-            a = str(input('Cadastrar pedido (y-Sim, n-Nao): '))
+            # SOLUÇÃO Nº 2 (Corretiva): Validação de entrada robusta
+            a = str(input('Deseja cadastrar um novo pedido? (s/n): ')).lower().strip()
             
-            if a=='y':
+            if a=='s': # A verificação agora é com 's'
                 print('----------Cadastrar pedido----------\n')
                 adicionar = 'y'
                 pedidos = PedidoControler.search_in_pedidos_all(database_name)
