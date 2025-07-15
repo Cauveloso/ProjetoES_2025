@@ -14,7 +14,13 @@ class Janela2:
         print('------Pesquisar Pedido--------')
         q = int(input('Unico-1\nTodos-2\nAtualizar Estado-3\nDigite: '))
         if q==1:
-            indice = int(input('Indice do pedido: '))
+            while True:
+                try:
+                    indice = int(input('Índice do pedido: '))
+                    break # Se a conversão para int for bem-sucedida, sai do loop
+                except ValueError:
+                    print("Entrada inválida! Por favor, digite apenas o número do pedido.")
+
             resume = ItemControler.search_into_itens_pedidos_id(database_name, indice)
             informacoes_pedido = PedidoControler.search_in_pedidos_id(database_name,indice)[0]
             quantidade_itens = len(resume)
@@ -43,8 +49,14 @@ class Janela2:
             print(f'\nPedidos \n\n{exibir_tela}')
             print(f'Faturamento R$ {faturamento}')
         
-        elif q=='3':
-            indice = int(input('Indice do pedido: '))
+        elif q==3:
+            while True:
+                try:
+                    indice = int(input('Índice do pedido: '))
+                    break # Se a conversão para int for bem-sucedida, sai do loop
+                except ValueError:
+                    print("Entrada inválida! Por favor, digite apenas o número do pedido.")
+
             resume = ItemControler.search_into_itens_pedidos_id(database_name, indice)
             quantidade_itens = len(resume)
             exibir_tela = ''
@@ -56,15 +68,21 @@ class Janela2:
                 print(f'\nResumo do pedido {indice}: \n {exibir_tela}\nItens: {quantidade_itens}\n')
                 print('Informações do Pedido\n')
                 print(f'Status: {informacoes_pedido[1]}\nDelivery: {informacoes_pedido[2]}\nEndereco: {informacoes_pedido[3]}\nData: {informacoes_pedido[4]}\nR$ {informacoes_pedido[5]}')
-                novo_status = int(input('preparo - 1 | pronto - 2 | entregue - 3: '))
-                if novo_status/novo_status != 1:
-                    print('Entrada inválida, retornando')
-                else:
-                    result = PedidoControler.update_pedido_status_id(database_name, indice, novo_status)
-                    if result:
-                        print(f'Status do Pedido {indice} atualizado com sucesso')
-                    else:
-                        print('Erro ao atualizar')
+                
+                while True:
+                    try:
+                        novo_status = int(input('preparo - 1 | pronto - 2 | entregue - 3: '))
+                        if novo_status in [1, 2, 3]:
+                            result = PedidoControler.update_pedido_status_id(database_name, indice, novo_status)
+                            if result:
+                                print(f'Status do Pedido {indice} atualizado com sucesso')
+                            else:
+                                print('Erro ao atualizar o status.')
+                            break  # Sai do loop após a tentativa de atualização
+                        else:
+                            print('Opção inválida! Digite apenas 1, 2 ou 3.')
+                    except ValueError:
+                        print('Entrada inválida! Digite apenas números (1, 2 ou 3).')
             else:
                 print('Indice inválido')    
         else:

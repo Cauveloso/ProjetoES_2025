@@ -71,5 +71,5 @@ while a == 'y':
         a = 'n'
         break
 exit()
-# testando commit
+
 #manutenções em: itemControler.py, janela1.py, pedidoControler.py
