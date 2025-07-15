@@ -66,7 +66,7 @@ while a == 'y':
         else:
             print("Erro ao gerar o relatório.")
     if opcao == '4':
-        Janela3.mostrar_janela3(database_name) # adcionando o novo view (Janela3)
+        Janela3.mostrar_janela3(database.name) # adcionando o novo view (Janela3)
     if opcao == '5':
         a = 'n'
         break
