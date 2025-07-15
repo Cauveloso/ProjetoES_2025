@@ -27,21 +27,17 @@ class Janela1:
         return None
         """
         
-        a = 'y'
-        
         # SOLUÇÃO Nº 1 (Perfectiva): Melhorando a exibição do menu.
         menu_itens = ItemControler.mostrar_itens_menu(database_name)
         print('\n-------------------- Menu --------------------')
         print(f'{"ID":<5}| {"Nome":<20}| {"Preço":<10}| {"Tipo":<15}')
         print('-' * 55)
         for item in menu_itens:
-        # Acessando os dados por índice: item[0]=ID, item[1]=Nome, item[2]=Preço, etc.
             print(f'{item[0]:<5}| {item[1]:<20}| R$ {item[2]:<7.2f}| {item[3]:<15}')
         print('-' * 55)
-        while a=='y':
-            lista_itens = []
-            valor_total=0
-            
+
+        # Loop principal para controlar o fluxo de cadastro
+        while True:
             # SOLUÇÃO Nº 2 (Corretiva): Validação de entrada robusta para 'sim'/'não'
             # Lista de possíveis respostas afirmativas
             respostas_positivas = ['s', 'sim']
@@ -51,25 +47,34 @@ class Janela1:
             # A normalização não é nativa, mas a lógica de verificação cobre isso
             entrada_usuario = str(input('Deseja cadastrar um novo pedido? (s-Sim / n-Não): ')).lower().strip()
             
-            if entrada_usuario in respostas_positivas: # A verificação agora é com as respostas positivas
+            # --- Bloco IF: Se o usuário quer cadastrar ---
+            if entrada_usuario in respostas_positivas:
                 print('----------Cadastrar pedido----------\n')
+                
+                lista_itens = []
+                valor_total = 0
                 adicionar = 's'
                 pedidos = PedidoControler.search_in_pedidos_all(database_name)
-                numero_pedido = len(pedidos)+1
+                numero_pedido = len(pedidos) + 1
+                
+                # Loop para adicionar itens ao pedido
                 while adicionar == 's':
-                    item = int(input('Numero do item: '))
-                    quantidade = int(input('Quantidade: '))
+                    while True:
+                        try:
+                            item = int(input('Numero do item: '))
+                            quantidade = int(input('Quantidade: '))
+                            break # Sai deste loop interno se as duas entradas forem números
+                        except ValueError:
+                            print("Entrada inválida! Por favor, digite apenas NÚMEROS para o item e a quantidade.")
                     
-                    #calculando em tempo de execução o valor do pedido
                     a = ItemControler.valor_item(database_name, item)
-                    b = a[0][0]*quantidade
-                    print(b)
-                    valor_total+=b
+                    b = a[0][0] * quantidade
+                    valor_total += b
                     
-                    for x in range(0,quantidade):#acrescentado o mesmo item várias vezes, de acordo com a quantidade
-                        lista_itens.append((numero_pedido,item))
+                    for x in range(quantidade):
+                        lista_itens.append((numero_pedido, item))
                     
-                    # Validação robusta para adicionar novo item
+                    # Validação para adicionar mais itens
                     while True:
                         adicionar_input = str(input('Adicionar novo item? (s-Sim, n-Nao): ')).lower().strip()
                         if adicionar_input in respostas_positivas:
@@ -81,16 +86,18 @@ class Janela1:
                         else:
                             print('Resposta inválida! Digite "s" para Sim ou "n" para Não.')
                 
+                # Finalização do pedido
                 print('\n----------Finalizar pedido----------\n')
                 print(f'Numero do pedido: {numero_pedido}')
                 delivery = str(input('Delivery (S/N): ')).lower()
-                if delivery=='s':
+                if delivery == 's':
                     delivery = True
-                elif delivery=='n':
+                elif delivery == 'n':
                     delivery = False
                 else:
                     print('Valor incorreto, recomeçando')
-                    break
+                    continue # Volta para o início do while True principal
+                    
                 endereco = str(input('Endereco:'))
                 while True:
                     try:
@@ -112,14 +119,19 @@ class Janela1:
                 print(f'Valor Final: R${valor_total}')
                 data_hoje = date.today()
                 data_formatada = data_hoje.strftime('%d/%m/%Y')
-                print(data_formatada)
-                print(endereco)
-                pedido = Pedido(status, str(delivery), endereco,data_formatada,float(valor_total))
-                PedidoControler.insert_into_pedidos(database_name,pedido)
-                for elem in lista_itens:
-                    ItemControler.insert_into_itens_pedidos(database_name,elem)
                 
-            elif entrada_usuario in respostas_negativas :
-                print('Voltando ao Menu inicial')
+                pedido = Pedido(status, str(delivery), endereco, data_formatada, float(valor_total))
+                PedidoControler.insert_into_pedidos(database_name, pedido)
+                for elem in lista_itens:
+                    ItemControler.insert_into_itens_pedidos(database_name, elem)
+                print("Pedido cadastrado com sucesso!")
+
+            # --- Bloco ELIF: Se o usuário NÃO quer cadastrar ---
+            elif entrada_usuario in respostas_negativas:
+                print('Voltando ao Menu inicial...')
                 time.sleep(1)
-                break
+                break # Encerra o loop e finaliza a função
+
+            # --- Bloco ELSE: Se a entrada foi inválida ---
+            else:
+                print('Resposta inválida! Por favor, digite "s" para Sim ou "n" para Não.')
