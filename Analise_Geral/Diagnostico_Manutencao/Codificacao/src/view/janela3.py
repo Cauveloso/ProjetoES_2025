@@ -72,12 +72,12 @@ class Janela3:
             print(f"Preço: R$ {preco:.2f}")
             print(f"Categoria: {tipo}")
             
-            confirmacao = input("\nConfirmar cadastro? (S/N): ").lower()
-            while confirmacao not in ['s', 'n']:
-                print("Erro: Digite S ou N!")
-                confirmacao = input("Confirmar cadastro? (S/N): ").lower()
+            confirmacao = input("\nConfirmar cadastro? (S/N): ").lower().strip()
+            while confirmacao not in ['s', 'n', "sim", "nao", "não"]:
+                print("Erro: Digite Sim ou Não!")
+                confirmacao = input("Confirmar cadastro? (S/N): ").lower().strip()
             
-            if confirmacao == 'n':
+            if confirmacao in ["n", "nao", "não"]:
                 print("Cadastro cancelado.")
                 break
             
@@ -97,11 +97,11 @@ class Janela3:
                 print(f"\nErro ao cadastrar item: {resultado}")
             
             # Verificar se deseja continuar
-            continuar = input("\nDeseja cadastrar outro item? (S/N): ").lower()
-            while continuar not in ['s', 'n']:
+            continuar = input("\nDeseja cadastrar outro item? (S/N): ").lower().strip()
+            while continuar not in ['s', 'n', "sim", "nao", "não"]:
                 print("Erro: Digite S ou N!")
-                continuar = input("Deseja cadastrar outro item? (S/N): ").lower()
+                continuar = input("Deseja cadastrar outro item? (S/N): ").lower().strip()
             
-            if continuar == 'n':
+            if continuar in ["n", "nao", "não"]:
                 print("Retornando ao menu principal...")
                 break

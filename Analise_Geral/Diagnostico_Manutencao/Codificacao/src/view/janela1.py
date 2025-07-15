@@ -63,7 +63,19 @@ class Janela1:
                         try:
                             item = int(input('Numero do item: '))
                             quantidade = int(input('Quantidade: '))
-                            break # Sai deste loop interno se as duas entradas forem números
+
+                            # CORREÇÃO: Verifica se a quantidade é um número positivo
+                            if quantidade <= 0:
+                                print("ERRO: A quantidade deve ser maior que zero. Tente novamente.")
+                                continue
+
+                            # CORREÇÃO: Verifica se o ID do item é válido
+                            a = ItemControler.valor_item(database_name, item)
+                            if not a: # Se a lista 'a' estiver vazia, o item não existe
+                                print("ERRO: Número do item inválido. Por favor, escolha um ID do menu.")
+                                continue
+
+                            break # Sai do loop de validação se tudo estiver correto
                         except ValueError:
                             print("Entrada inválida! Por favor, digite apenas NÚMEROS para o item e a quantidade.")
                     
@@ -89,16 +101,25 @@ class Janela1:
                 # Finalização do pedido
                 print('\n----------Finalizar pedido----------\n')
                 print(f'Numero do pedido: {numero_pedido}')
-                delivery = str(input('Delivery (S/N): ')).lower()
-                if delivery == 's':
-                    delivery = True
-                elif delivery == 'n':
-                    delivery = False
-                else:
-                    print('Valor incorreto, recomeçando')
-                    continue # Volta para o início do while True principal
+
+                while True:
+                    delivery_input = str(input('Delivery (S/N): ')).lower().strip()
+                    if delivery_input in respostas_positivas: # ['s', 'sim']
+                        delivery = True
+                        break
+                    elif delivery_input in respostas_negativas: # ['n', 'nao', 'não']
+                        delivery = False
+                        break
+                    else:
+                        # Pede a informação novamente sem reiniciar o pedido
+                        print('Valor incorreto. Por favor, digite "s" para Sim ou "n" para Não.')
                     
-                endereco = str(input('Endereco:'))
+                # CORREÇÃO: Pede o endereço apenas se for para delivery
+                if delivery:
+                    endereco = str(input('Endereco: '))
+                else:
+                    endereco = 'Retirada no local' # Define um valor padrão para não-delivery
+
                 while True:
                     try:
                         status_aux = int(input('status: 1-preparo, 2-pronto, 3-entregue: '))
@@ -116,7 +137,7 @@ class Janela1:
                     except ValueError:
                         print('Entrada inválida! Digite apenas números (1, 2 ou 3).')
  
-                print(f'Valor Final: R${valor_total}')
+                print(f'Valor Final: R${valor_total:.2f}') # Formatando a saída do valor total
                 data_hoje = date.today()
                 data_formatada = data_hoje.strftime('%d/%m/%Y')
                 
