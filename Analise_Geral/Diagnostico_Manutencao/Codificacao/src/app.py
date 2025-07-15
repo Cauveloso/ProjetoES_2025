@@ -19,7 +19,7 @@ from controler.relatorioController import RelatorioControler
 #views
 from view.janela1 import Janela1
 from view.janela2 import Janela2
-# from view.janela3 import Janela3 !(erro de importação na execução do código - nao existe a janela.3)
+from view.janela3 import Janela3 # adcionando o direitorio de Janela3
 
 #report
 from report.relatorio1 import PDF
@@ -66,7 +66,7 @@ while a == 'y':
         else:
             print("Erro ao gerar o relatório.")
     if opcao == '4':
-        print('Nova view')
+        Janela3.mostrar_janela3(database_name) # adcionando o novo view (Janela3)
     if opcao == '5':
         a = 'n'
         break
